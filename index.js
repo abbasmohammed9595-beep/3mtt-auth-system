@@ -44,5 +44,31 @@ app.post("/reset-password", async (req, res) => {
   user.password = await bcrypt.hash(newPassword, 10);
   res.send("Password reset");
 });
+const authenticate = (req, res, next) => {
+  const auth = req.headers["authorization"];
+  const token = auth && auth.split(" ")[1];
+  if (!token) return res.sendStatus(401);
+  jwt.verify(token, ACCESS_SECRET, (err, user) => {
+    if (err) return res.sendStatus(403);
+    req.user = user;
+    next();
+  });
+};
+
+const requireRole = (role) => (req, res, next) => {
+  if (req.user.role!== role) return res.sendStatus(403);
+  next();
+};
+
+app.get("/admin", authenticate, requireRole("admin"), (req, res) => {
+  res.send("Welcome admin");
+});
 
 app.listen(3000, () => console.log("Server on 3000"));
+         
+  });
+app.post("/logout", (req, res) => {
+  const { token } = req.body;
+  refreshTokens = refreshTokens.filter(t => t!== token); 
+  res.send("Logged out");
+});
